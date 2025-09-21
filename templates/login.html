@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div id="root"></div>
+{% endblock %}
+{% block scripts %}
+{% raw %}
+<script type="text/babel">
+  const { useState } = React;
+
+  function Login() {
+    const [email, setEmail] = useState("");
+
+    const handleEmailSignup = () => {
+      if (!email) return;
+      localStorage.setItem("ramble_user", JSON.stringify({
+        name: "Alex",
+        email,
+        points: 2690,
+        rank: 4,
+      }));
+      window.location.assign('/dashboard');
+    };
+
+    const handleLinkedInLogin = () => {
+      localStorage.setItem("ramble_user", JSON.stringify({
+        name: "Alex",
+        email: "alex@example.com",
+        points: 2690,
+        rank: 4,
+      }));
+      window.location.assign('/dashboard');
+    };
+
+    return (
+      <div className="min-vh-100 d-flex align-items-center justify-content-center" style={{ background: 'linear-gradient(180deg, #facc15, #eab308)' }}>
+        <div className="container py-4">
+          <div className="row justify-content-center">
+            <div className="col-12 col-sm-10 col-md-7 col-lg-5 col-xl-4">
+              <div className="card bg-transparent border-0">
+                <div className="card-body text-center p-4 p-md-5">
+                  {/* Logo */}
+                  <div className="d-flex justify-content-center">
+                    <img
+                      src="/images/ramble-logo.png"
+                      alt="RAMBLE Logo"
+                      className="img-fluid"
+                      style={{ width: '8rem', height: '8rem', objectFit: 'contain' }}
+                      onError={(e)=>{ e.currentTarget.onerror=null; e.currentTarget.src='/public/placeholder-logo.png'; }}
+                    />
+                  </div>
+
+                  {/* Login Buttons */}
+                  <div className="d-flex flex-column gap-3 mt-4">
+                    <button onClick={handleLinkedInLogin} className="btn btn-primary btn-lg w-100 fw-semibold py-3 rounded-3">
+                      Continue with LinkedIn
+                    </button>
+
+                    <div className="text-white fw-semibold">OR</div>
+
+                    <input
+                      type="email"
+                      placeholder="Enter your email"
+                      value={email}
+                      onChange={(e)=>setEmail(e.target.value)}
+                      className="form-control form-control-lg"
+                    />
+
+                    <button onClick={handleEmailSignup} className="btn btn-light btn-lg w-100 text-dark fw-semibold py-3 rounded-3">
+                      📧 Sign up with Email
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById('root')).render(<Login/>);
+</script>
+{% endraw %}
+{% endblock %}
