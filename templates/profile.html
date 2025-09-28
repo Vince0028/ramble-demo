@@ -39,7 +39,7 @@
     if (!user) return null;
 
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 pb-24">
         {/* Header */}
         <div className="bg-blue-900 text-white p-4">
           <div className="flex items-center justify-between">
@@ -148,8 +148,11 @@
           </div>
         </div>
 
-        {/* Bottom Navigation */}
-        <div className="fixed bottom-0 left-0 right-0 bg-yellow-400 p-2">
+        {/* Spacer to ensure content can scroll above fixed bottom nav */}
+        <div aria-hidden="true" className="h-20"></div>
+
+        {/* Bottom Navigation (fixed at viewport bottom) */}
+        <div className="fixed bottom-0 left-0 right-0 bg-yellow-400 p-2 h-16 z-40">
           <div className="flex justify-around items-center">
             <button className="flex flex-col items-center gap-1 text-black p-2 rounded hover:bg-black/10" onClick={() => window.location.assign('/dashboard')}>
               <i data-lucide="home" className="w-5 h-5"></i>

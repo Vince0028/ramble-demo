@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: ramble-demo
+    env: python
+    buildCommand: pip install -r requirement.txt
+    startCommand: python app.py
+    envVars:
+      - key: SECRET_KEY
+        value: ramble-demo-secret-key-2024-production
+      - key: LINKEDIN_CLIENT_ID
+        value: 862mvp7e208g5z
+      - key: LINKEDIN_CLIENT_SECRET
+        value: WPL_AP1.DLvWnuIO53i8K8Gk.r22wZQ==
+      - key: LINKEDIN_REDIRECT_URI
+        value: https://ramble-demo-1.onrender.com/auth/linkedin/callback
