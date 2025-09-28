@@ -12,8 +12,8 @@ app = Flask(__name__, static_folder="static", template_folder="templates")
 app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(16))
 
 # LinkedIn OAuth configuration
-LINKEDIN_CLIENT_ID = os.environ.get('LINKEDIN_CLIENT_ID')
-LINKEDIN_CLIENT_SECRET = os.environ.get('LINKEDIN_CLIENT_SECRET')
+LINKEDIN_CLIENT_ID = os.environ.get('LINKEDIN_CLIENT_ID', '862mvp7e208g5z')
+LINKEDIN_CLIENT_SECRET = os.environ.get('LINKEDIN_CLIENT_SECRET', 'WPL_AP1.DLvWnuIO53i8K8Gk.r22wZQ==')
 LINKEDIN_REDIRECT_URI = os.environ.get('LINKEDIN_REDIRECT_URI', 'http://localhost:5000/auth/linkedin/callback')
 
 # Serve files from existing Next.js public/ folder for convenience (images, placeholders)
@@ -61,6 +61,10 @@ def quiz():
 @app.route('/auth/linkedin')
 def linkedin_login():
     """Initiate LinkedIn OAuth flow"""
+    print(f"DEBUG: LINKEDIN_CLIENT_ID = {LINKEDIN_CLIENT_ID}")
+    print(f"DEBUG: LINKEDIN_CLIENT_SECRET = {LINKEDIN_CLIENT_SECRET}")
+    print(f"DEBUG: LINKEDIN_REDIRECT_URI = {LINKEDIN_REDIRECT_URI}")
+    
     if not LINKEDIN_CLIENT_ID:
         return jsonify({'error': 'LinkedIn OAuth not configured'}), 500
     
