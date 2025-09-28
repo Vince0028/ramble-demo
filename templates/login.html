@@ -24,13 +24,8 @@
     };
 
     const handleLinkedInLogin = () => {
-      localStorage.setItem("ramble_user", JSON.stringify({
-        name: "Alex",
-        email: "alex@example.com",
-        points: 2690,
-        rank: 4,
-      }));
-      window.location.assign('/dashboard');
+      // Redirect to LinkedIn OAuth endpoint
+      window.location.assign('/auth/linkedin');
     };
 
     return (

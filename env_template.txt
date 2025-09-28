@@ -1,0 +1,8 @@
+# Flask Configuration
+SECRET_KEY=your-secret-key-here
+
+# LinkedIn OAuth Configuration
+# Get these from https://www.linkedin.com/developers/apps
+LINKEDIN_CLIENT_ID=your-linkedin-client-id
+LINKEDIN_CLIENT_SECRET=your-linkedin-client-secret
+LINKEDIN_REDIRECT_URI=https://ramble-demo-1.onrender.com/auth/linkedin/callback
