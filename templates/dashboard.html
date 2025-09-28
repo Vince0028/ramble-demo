@@ -7,6 +7,196 @@
 <script type="text/babel">
   const { useState, useEffect } = React;
 
+  function QuizModal({ isOpen, onComplete }) {
+    const [currentQuestion, setCurrentQuestion] = useState(0);
+    const [answers, setAnswers] = useState([]);
+    const [timeLeft, setTimeLeft] = useState(10);
+
+    const questions = [
+      {
+        question: 'Your ideal weekend project involves:',
+        options: [
+          { icon: '⚙️', text: 'Prototyping a new app idea' }, // Innovative
+          { icon: '👥', text: 'Organizing a hackathon' },      // Social
+          { icon: '💻', text: 'Learning a new programming language' }, // Visionary
+          { icon: '📊', text: 'Creating a business plan' },    // Captain
+        ],
+      },
+      {
+        question: 'What brings you to this event?',
+        options: [
+          { icon: '🤝', text: 'Find mentors and advisors' },   // Social
+          { icon: '💡', text: 'Share my startup idea' },       // Innovative
+          { icon: '🔗', text: 'Network with like-minded people' }, // Social
+          { icon: '📚', text: 'Learn from industry experts' }, // Visionary
+        ],
+      },
+      {
+        question: 'Choose your superpower:',
+        options: [
+          { icon: '💡', text: 'Ideas - I\'m the visionary' }, // Visionary
+          { icon: '👥', text: 'People - I connect and inspire' }, // Social
+          { icon: '🔨', text: 'Building - I make things happen' }, // Innovative
+          { icon: '📈', text: 'Strategy - I plan and execute' }, // Captain
+        ],
+      },
+    ];
+
+    useEffect(() => {
+      if (!isOpen) return;
+      const timer = setInterval(() => {
+        setTimeLeft(prev => {
+          if (prev <= 1) {
+            if (currentQuestion < questions.length - 1) {
+              setCurrentQuestion(q => q + 1);
+              return 10;
+            }
+            handleComplete();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(timer);
+    }, [isOpen, currentQuestion]);
+
+    const handleAnswer = (index) => {
+      const newAnswers = [...answers, index];
+      setAnswers(newAnswers);
+      if (currentQuestion < questions.length - 1) {
+        setCurrentQuestion(currentQuestion + 1);
+        setTimeLeft(10);
+      } else {
+        handleComplete(newAnswers);
+      }
+    };
+
+    const handleComplete = (finalAnswers = answers) => {
+      // Scoring map per option index
+      const scores = { Innovative: 0, Visionary: 0, Captain: 0, Social: 0 };
+      const maps = [
+        ['Innovative','Social','Visionary','Captain'],
+        ['Social','Innovative','Social','Visionary'],
+        ['Visionary','Social','Innovative','Captain'],
+      ];
+      finalAnswers.forEach((answerIndex, qIdx) => {
+        const type = maps[qIdx][answerIndex];
+        scores[type] += 1;
+      });
+      const resultType = Object.entries(scores).sort((a,b)=>b[1]-a[1])[0][0];
+      localStorage.setItem('ramble_user_type', resultType);
+      onComplete(resultType);
+    };
+
+    if (!isOpen) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+        <div className="w-full max-w-md bg-gray-900 text-white rounded-xl shadow-lg overflow-hidden">
+          <div className="p-4">
+            <div className="flex items-center justify-between mb-4">
+              <div className="text-sm font-semibold">Quick Quiz</div>
+              <div className="flex items-center gap-2">
+                <div className="text-sm">{timeLeft}s</div>
+                <div className="w-12 h-1 bg-gray-600 rounded">
+                  <div className="h-full bg-yellow-400 rounded transition-all duration-1000" style={{ width: `${(timeLeft/10)*100}%` }} />
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-1 mb-6">
+              {questions.map((_, i) => (
+                <div key={i} className={`flex-1 h-1 rounded ${i <= currentQuestion ? 'bg-blue-500' : 'bg-gray-600'}`} />
+              ))}
+            </div>
+          </div>
+          <div className="px-6 pb-6">
+            <div className="flex justify-center mb-6">
+              <img src="/images/ramble-logo.png" alt="RAMBLE Logo" width="64" height="64"
+                   onError={(e)=>{ e.currentTarget.onerror=null; e.currentTarget.src='/public/placeholder-logo.png'; }} />
+            </div>
+            <h2 className="text-xl font-bold text-center mb-6">{questions[currentQuestion].question}</h2>
+            <div className="space-y-3">
+              {questions[currentQuestion].options.map((option, index) => (
+                <button key={index} onClick={() => handleAnswer(index)} className="w-full p-3 bg-white hover:bg-gray-100 text-black text-left flex items-center gap-3 rounded-lg">
+                  <span className="text-lg">{option.icon}</span>
+                  <span className="font-medium">{option.text}</span>
+                </button>
+              ))}
+            </div>
+            <div className="text-center text-sm text-gray-400 mt-4">{currentQuestion+1}/{questions.length}</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  function ResultSplash({ type, onClose }) {
+    if (!type) return null;
+    const config = {
+      Innovative: {
+        color: 'text-yellow-300',
+        accent: 'bg-yellow-400',
+        title: 'INNOVATIVE RAM',
+        subtitle: 'You turn Ideas into Reality!',
+        bgMobile: '/images/splash/innovative-mobile.jpg',
+        bgDesktop: '/images/splash/innovative-desktop.jpg',
+      },
+      Visionary: {
+        color: 'text-cyan-300',
+        accent: 'bg-cyan-400',
+        title: 'VISIONARY RAM',
+        subtitle: 'You see the Future and Build it!',
+        bgMobile: '/images/splash/visionary-mobile.jpg',
+        bgDesktop: '/images/splash/visionary-desktop.jpg',
+      },
+      Captain: {
+        color: 'text-green-300',
+        accent: 'bg-green-400',
+        title: 'CAPTAIN RAM',
+        subtitle: 'You Lead Teams and Plan out Strategies!',
+        bgMobile: '/images/splash/captain-mobile.jpg',
+        bgDesktop: '/images/splash/captain-desktop.jpg',
+      },
+      Social: {
+        color: 'text-red-300',
+        accent: 'bg-red-400',
+        title: 'SOCIAL RAM',
+        subtitle: 'You bring people together!',
+        bgMobile: '/images/splash/social-mobile.jpg',
+        bgDesktop: '/images/splash/social-desktop.jpg',
+      },
+    }[type] || { color: 'text-white', accent: 'bg-white', title: type, subtitle: '', bgMobile: '', bgDesktop: '' };
+
+    const isPortrait = typeof window !== 'undefined' ? window.innerHeight >= window.innerWidth : true;
+    const backgroundImage = isPortrait ? config.bgMobile : config.bgDesktop;
+
+    return (
+      <div className="fixed inset-0 z-40 flex items-center justify-center">
+        <div className="absolute inset-0">
+          <div
+            className="w-full h-full"
+            style={{
+              backgroundImage: backgroundImage ? `url(${backgroundImage})` : undefined,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundColor: '#0c4a6e',
+            }}
+          />
+        </div>
+        <div className="absolute inset-0 bg-black/20" />
+        <div className="relative z-10 text-center p-6">
+          <div className="flex justify-center mb-6">
+            <img src="/images/ramble-logo.png" alt="RAMBLE Logo" width="96" height="96"
+                 onError={(e)=>{ e.currentTarget.onerror=null; e.currentTarget.src='/public/placeholder-logo.png'; }} />
+          </div>
+          <div className={`text-3xl md:text-5xl font-extrabold drop-shadow ${config.color}`}>{config.title}</div>
+          <div className="mt-4 text-white/90 text-lg md:text-2xl">{config.subtitle}</div>
+          <button className="mt-8 px-5 py-3 rounded-md font-semibold text-black bg-yellow-400 hover:bg-yellow-500" onClick={onClose}>Continue</button>
+        </div>
+      </div>
+    );
+  }
+
   function ChallengeModal({ isOpen, onClose, challenge }) {
     if (!isOpen) return null;
     return (
@@ -42,6 +232,8 @@
     const [user, setUser] = useState(null);
     const [timeToNextRound, setTimeToNextRound] = useState(7 * 60);
     const [showChallenge, setShowChallenge] = useState(false);
+    const [showQuiz, setShowQuiz] = useState(false);
+    const [resultType, setResultType] = useState(null);
 
     const challenge = {
       title: "Network Challenge!",
@@ -57,8 +249,10 @@
       } else {
         window.location.assign('/');
       }
-      const showTimer = setTimeout(() => setShowChallenge(true), 3000);
-      return () => clearTimeout(showTimer);
+      
+      // Always show quiz on dashboard load for testing
+      console.log('Dashboard loaded, showing quiz');
+      setShowQuiz(true);
     }, []);
 
     useEffect(() => {
@@ -197,6 +391,22 @@
         </div>
 
         <ChallengeModal isOpen={showChallenge} onClose={() => setShowChallenge(false)} challenge={challenge} />
+        <QuizModal
+          isOpen={showQuiz}
+          onComplete={(type) => {
+            setShowQuiz(false);
+            setResultType(type);
+          }}
+        />
+        <ResultSplash
+          type={resultType}
+          onClose={() => {
+            setResultType(null);
+            // show challenge after splash
+            const timer = setTimeout(() => setShowChallenge(true), 1200);
+            return () => clearTimeout(timer);
+          }}
+        />
       </div>
     );
   }

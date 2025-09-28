@@ -6,9 +6,11 @@
 {% raw %}
 <script type="text/babel">
   const { useState } = React;
+  
 
   function Login() {
     const [email, setEmail] = useState("");
+    
 
     const handleEmailSignup = () => {
       if (!email) return;
