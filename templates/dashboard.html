@@ -288,7 +288,7 @@
     if (!user) return null;
 
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50" style={{ paddingBottom: '140px' }}>
         {/* Header */}
         <div className="bg-blue-900 text-white p-4 text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
@@ -367,9 +367,11 @@
             </div>
           </div>
         </div>
+        {/* Spacer to ensure content can scroll above fixed bottom nav */}
+        <div aria-hidden="true" style={{ height: 'var(--bottom-nav-height)' }}></div>
 
-        {/* Bottom Navigation */}
-        <div className="fixed bottom-0 left-0 right-0 bg-yellow-400 p-2">
+        {/* Bottom Navigation (fixed) */}
+        <div className="fixed bottom-0 left-0 right-0 bg-yellow-400 p-2 h-16 z-40" data-bottom-nav>
           <div className="flex justify-around items-center">
             <button className="flex flex-col items-center gap-1 text-black p-2 rounded hover:bg-black/10">
               <i data-lucide="home" className="w-5 h-5"></i>
