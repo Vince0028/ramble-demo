@@ -38,11 +38,16 @@
                   {/* Logo */}
                   <div className="d-flex justify-content-center">
                     <img
-                      src="/images/ramble-logo.png"
+                      src="/images/ramble-logo.png?v=1"
                       alt="RAMBLE Logo"
                       className="img-fluid"
                       style={{ width: '8rem', height: '8rem', objectFit: 'contain' }}
-                      onError={(e)=>{ e.currentTarget.onerror=null; e.currentTarget.src='/public/placeholder-logo.png'; }}
+                      onError={(e)=>{ 
+                        console.log('Image load error:', e.currentTarget.src);
+                        e.currentTarget.onerror=null; 
+                        e.currentTarget.src='/public/placeholder-logo.png'; 
+                      }}
+                      onLoad={() => console.log('Image loaded successfully')}
                     />
                   </div>
 

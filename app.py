@@ -26,6 +26,11 @@ def public_files(filename):
 def public_images(filename):
     return send_from_directory('public/images', filename)
 
+# Fallback route for missing images
+@app.route('/public/placeholder-logo.png')
+def placeholder_logo():
+    return send_from_directory('public', 'placeholder-logo.png')
+
 
 @app.route('/')
 def home():
