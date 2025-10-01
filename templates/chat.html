@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat - Ramble</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .chat-container {
+            height: calc(100vh - 4rem);
+        }
+        .message-bubble {
+            max-width: 70%;
+            word-wrap: break-word;
+        }
+        .online-indicator {
+            width: 8px;
+            height: 8px;
+            background-color: #10b981;
+            border-radius: 50%;
+            position: absolute;
+            bottom: 0;
+            right: 0;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <img src="/images/ramble-logo.png" alt="Ramble" class="h-8 w-auto">
+                    <span class="ml-2 text-xl font-bold text-gray-900">Ramble</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/dashboard" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
+                        <i class="fas fa-home mr-1"></i> Dashboard
+                    </a>
+                    <a href="/groups" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
+                        <i class="fas fa-users mr-1"></i> Groups
+                    </a>
+                    <a href="/leaderboard" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
+                        <i class="fas fa-trophy mr-1"></i> Leaderboard
+                    </a>
+                    <a href="/profile" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
+                        <i class="fas fa-user mr-1"></i> Profile
+                    </a>
+                    <a href="/chat" class="bg-blue-600 text-white px-3 py-2 rounded-md text-sm font-medium">
+                        <i class="fas fa-comments mr-1"></i> Chat
+                    </a>
+                    <button onclick="logout()" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
+                        <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Chat Container -->
+    <div class="chat-container flex">
+        <!-- Sidebar -->
+        <div class="w-1/3 bg-white border-r border-gray-200 flex flex-col">
+            <!-- Search and New Chat -->
+            <div class="p-4 border-b border-gray-200">
+                <div class="flex space-x-2">
+                    <input type="text" id="searchUsers" placeholder="Search users..." 
+                           class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button onclick="showCreateGroupModal()" 
+                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="flex border-b border-gray-200">
+                <button onclick="showTab('users')" id="usersTab" 
+                        class="flex-1 px-4 py-3 text-sm font-medium text-blue-600 border-b-2 border-blue-600">
+                    <i class="fas fa-users mr-2"></i>Users
+                </button>
+                <button onclick="showTab('groups')" id="groupsTab" 
+                        class="flex-1 px-4 py-3 text-sm font-medium text-gray-500 border-b-2 border-transparent">
+                    <i class="fas fa-layer-group mr-2"></i>Groups
+                </button>
+                <button onclick="showTab('invitations')" id="invitationsTab" 
+                        class="flex-1 px-4 py-3 text-sm font-medium text-gray-500 border-b-2 border-transparent">
+                    <i class="fas fa-envelope mr-2"></i>Invites
+                </button>
+            </div>
+
+            <!-- Content -->
+            <div class="flex-1 overflow-y-auto">
+                <!-- Users List -->
+                <div id="usersList" class="p-4">
+                    <div class="space-y-2" id="usersContainer">
+                        <!-- Users will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Groups List -->
+                <div id="groupsList" class="p-4 hidden">
+                    <div class="space-y-2" id="groupsContainer">
+                        <!-- Groups will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Invitations List -->
+                <div id="invitationsList" class="p-4 hidden">
+                    <div class="space-y-2" id="invitationsContainer">
+                        <!-- Invitations will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="flex-1 flex flex-col">
+            <!-- Chat Header -->
+            <div id="chatHeader" class="bg-white border-b border-gray-200 p-4 hidden">
+                <div class="flex items-center">
+                    <div class="relative">
+                        <img id="chatAvatar" src="/public/placeholder-user.jpg" alt="User" 
+                             class="h-10 w-10 rounded-full">
+                        <div id="chatOnlineIndicator" class="online-indicator"></div>
+                    </div>
+                    <div class="ml-3">
+                        <h3 id="chatTitle" class="text-lg font-medium text-gray-900"></h3>
+                        <p id="chatSubtitle" class="text-sm text-gray-500"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Messages Area -->
+            <div id="messagesArea" class="flex-1 overflow-y-auto p-4 bg-gray-50">
+                <div id="messagesContainer" class="space-y-4">
+                    <!-- Messages will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Message Input -->
+            <div id="messageInput" class="bg-white border-t border-gray-200 p-4 hidden">
+                <div class="flex space-x-2">
+                    <input type="text" id="messageText" placeholder="Type a message..." 
+                           class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button onclick="sendMessage()" 
+                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- No Chat Selected -->
+            <div id="noChatSelected" class="flex-1 flex items-center justify-center">
+                <div class="text-center">
+                    <i class="fas fa-comments text-6xl text-gray-300 mb-4"></i>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Select a conversation</h3>
+                    <p class="text-gray-500">Choose a user or group to start chatting</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Group Modal -->
+    <div id="createGroupModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">Create New Group</h3>
+                </div>
+                <div class="p-6">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Group Name</label>
+                        <input type="text" id="groupName" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                        <textarea id="groupDescription" rows="3" 
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                    </div>
+                    <div class="mb-4">
+                        <label class="flex items-center">
+                            <input type="checkbox" id="groupPrivate" class="mr-2">
+                            <span class="text-sm text-gray-700">Private Group</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-2">
+                    <button onclick="hideCreateGroupModal()" 
+                            class="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300">
+                        Cancel
+                    </button>
+                    <button onclick="createGroup()" 
+                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                        Create Group
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let currentChat = null;
+        let currentChatType = null; // 'user' or 'group'
+        let users = [];
+        let groups = [];
+        let invitations = [];
+
+        // Initialize chat
+        async function initChat() {
+            try {
+                // Get current user
+                const userResponse = await fetch('/api/user');
+                if (userResponse.ok) {
+                    currentUser = await userResponse.json();
+                } else {
+                    window.location.href = '/';
+                    return;
+                }
+
+                // Update online status
+                await fetch('/api/chat/online-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ is_online: true })
+                });
+
+                // Load initial data
+                await loadUsers();
+                await loadGroups();
+                await loadInvitations();
+                showTab('users');
+
+                // Set up periodic refresh
+                setInterval(loadInvitations, 30000); // Check for new invitations every 30 seconds
+            } catch (error) {
+                console.error('Error initializing chat:', error);
+            }
+        }
+
+        // Load users
+        async function loadUsers() {
+            try {
+                const response = await fetch('/api/chat/users');
+                if (response.ok) {
+                    users = await response.json();
+                    renderUsers();
+                }
+            } catch (error) {
+                console.error('Error loading users:', error);
+            }
+        }
+
+        // Load groups
+        async function loadGroups() {
+            try {
+                const response = await fetch('/api/chat/groups');
+                if (response.ok) {
+                    groups = await response.json();
+                    renderGroups();
+                }
+            } catch (error) {
+                console.error('Error loading groups:', error);
+            }
+        }
+
+        // Load invitations
+        async function loadInvitations() {
+            try {
+                const response = await fetch('/api/chat/invitations');
+                if (response.ok) {
+                    invitations = await response.json();
+                    renderInvitations();
+                }
+            } catch (error) {
+                console.error('Error loading invitations:', error);
+            }
+        }
+
+        // Render users
+        function renderUsers() {
+            const container = document.getElementById('usersContainer');
+            container.innerHTML = '';
+
+            users.forEach(user => {
+                const userElement = document.createElement('div');
+                userElement.className = 'flex items-center p-3 hover:bg-gray-50 cursor-pointer rounded-md';
+                userElement.onclick = () => startChat('user', user);
+
+                const avatar = user.profile_picture_url || '/public/placeholder-user.jpg';
+                const isOnline = user.is_online;
+
+                userElement.innerHTML = `
+                    <div class="relative">
+                        <img src="${avatar}" alt="${user.first_name}" class="h-10 w-10 rounded-full">
+                        ${isOnline ? '<div class="online-indicator"></div>' : ''}
+                    </div>
+                    <div class="ml-3 flex-1">
+                        <h4 class="text-sm font-medium text-gray-900">${user.first_name} ${user.surname}</h4>
+                        <p class="text-sm text-gray-500">${isOnline ? 'Online' : 'Offline'}</p>
+                    </div>
+                `;
+
+                container.appendChild(userElement);
+            });
+        }
+
+        // Render groups
+        function renderGroups() {
+            const container = document.getElementById('groupsContainer');
+            container.innerHTML = '';
+
+            groups.forEach(group => {
+                const groupElement = document.createElement('div');
+                groupElement.className = 'flex items-center p-3 hover:bg-gray-50 cursor-pointer rounded-md';
+                groupElement.onclick = () => startChat('group', group);
+
+                groupElement.innerHTML = `
+                    <div class="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-layer-group text-blue-600"></i>
+                    </div>
+                    <div class="ml-3 flex-1">
+                        <h4 class="text-sm font-medium text-gray-900">${group.groups.name}</h4>
+                        <p class="text-sm text-gray-500">${group.groups.description || 'No description'}</p>
+                    </div>
+                `;
+
+                container.appendChild(groupElement);
+            });
+        }
+
+        // Render invitations
+        function renderInvitations() {
+            const container = document.getElementById('invitationsContainer');
+            container.innerHTML = '';
+
+            if (invitations.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-4">No pending invitations</p>';
+                return;
+            }
+
+            invitations.forEach(invitation => {
+                const invitationElement = document.createElement('div');
+                invitationElement.className = 'p-3 border border-gray-200 rounded-md';
+
+                invitationElement.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="text-sm font-medium text-gray-900">${invitation.groups.name}</h4>
+                            <p class="text-sm text-gray-500">Invited by ${invitation.users.first_name} ${invitation.users.surname}</p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="respondToInvitation('${invitation.id}', 'accepted')" 
+                                    class="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700">
+                                Accept
+                            </button>
+                            <button onclick="respondToInvitation('${invitation.id}', 'declined')" 
+                                    class="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700">
+                                Decline
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                container.appendChild(invitationElement);
+            });
+        }
+
+        // Start chat with user or group
+        async function startChat(type, target) {
+            currentChat = target;
+            currentChatType = type;
+
+            // Show chat interface
+            document.getElementById('noChatSelected').classList.add('hidden');
+            document.getElementById('chatHeader').classList.remove('hidden');
+            document.getElementById('messageInput').classList.remove('hidden');
+
+            // Update chat header
+            if (type === 'user') {
+                document.getElementById('chatTitle').textContent = `${target.first_name} ${target.surname}`;
+                document.getElementById('chatSubtitle').textContent = target.is_online ? 'Online' : 'Offline';
+                document.getElementById('chatAvatar').src = target.profile_picture_url || '/public/placeholder-user.jpg';
+                document.getElementById('chatOnlineIndicator').style.display = target.is_online ? 'block' : 'none';
+            } else {
+                document.getElementById('chatTitle').textContent = target.groups.name;
+                document.getElementById('chatSubtitle').textContent = target.groups.description || 'Group chat';
+                document.getElementById('chatAvatar').src = '/public/placeholder-logo.png';
+                document.getElementById('chatOnlineIndicator').style.display = 'none';
+            }
+
+            // Load messages
+            await loadMessages();
+        }
+
+        // Load messages
+        async function loadMessages() {
+            try {
+                let url = '/api/chat/messages?';
+                if (currentChatType === 'user') {
+                    url += `recipient_id=${currentChat.id}`;
+                } else {
+                    url += `group_id=${currentChat.groups.id}`;
+                }
+
+                const response = await fetch(url);
+                if (response.ok) {
+                    const messages = await response.json();
+                    renderMessages(messages.reverse()); // Reverse to show oldest first
+                }
+            } catch (error) {
+                console.error('Error loading messages:', error);
+            }
+        }
+
+        // Render messages
+        function renderMessages(messages) {
+            const container = document.getElementById('messagesContainer');
+            container.innerHTML = '';
+
+            messages.forEach(message => {
+                const isOwn = message.sender_id === currentUser.db_user.id;
+                const messageElement = document.createElement('div');
+                messageElement.className = `flex ${isOwn ? 'justify-end' : 'justify-start'}`;
+
+                messageElement.innerHTML = `
+                    <div class="message-bubble ${isOwn ? 'bg-blue-600 text-white' : 'bg-white text-gray-900'} rounded-lg px-4 py-2 shadow-sm">
+                        <div class="flex items-start space-x-2">
+                            ${!isOwn ? `<img src="${message.users.profile_picture_url || '/public/placeholder-user.jpg'}" alt="${message.users.first_name}" class="h-6 w-6 rounded-full">` : ''}
+                            <div class="flex-1">
+                                ${!isOwn ? `<p class="text-xs font-medium mb-1">${message.users.first_name} ${message.users.surname}</p>` : ''}
+                                <p class="text-sm">${message.content}</p>
+                                <p class="text-xs ${isOwn ? 'text-blue-100' : 'text-gray-500'} mt-1">${new Date(message.created_at).toLocaleTimeString()}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                container.appendChild(messageElement);
+            });
+
+            // Scroll to bottom
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Send message
+        async function sendMessage() {
+            const messageText = document.getElementById('messageText');
+            const content = messageText.value.trim();
+
+            if (!content || !currentChat) return;
+
+            try {
+                const messageData = {
+                    content: content,
+                    message_type: 'text'
+                };
+
+                if (currentChatType === 'user') {
+                    messageData.recipient_id = currentChat.id;
+                } else {
+                    messageData.group_id = currentChat.groups.id;
+                }
+
+                const response = await fetch('/api/chat/messages', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(messageData)
+                });
+
+                if (response.ok) {
+                    messageText.value = '';
+                    await loadMessages(); // Reload messages
+                } else {
+                    console.error('Failed to send message');
+                }
+            } catch (error) {
+                console.error('Error sending message:', error);
+            }
+        }
+
+        // Create group
+        async function createGroup() {
+            const name = document.getElementById('groupName').value.trim();
+            const description = document.getElementById('groupDescription').value.trim();
+            const isPrivate = document.getElementById('groupPrivate').checked;
+
+            if (!name) return;
+
+            try {
+                const response = await fetch('/api/chat/groups', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: name,
+                        description: description,
+                        is_private: isPrivate
+                    })
+                });
+
+                if (response.ok) {
+                    hideCreateGroupModal();
+                    await loadGroups();
+                    showTab('groups');
+                } else {
+                    console.error('Failed to create group');
+                }
+            } catch (error) {
+                console.error('Error creating group:', error);
+            }
+        }
+
+        // Respond to invitation
+        async function respondToInvitation(invitationId, status) {
+            try {
+                const response = await fetch(`/api/chat/invitations/${invitationId}/respond`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: status })
+                });
+
+                if (response.ok) {
+                    await loadInvitations();
+                    await loadGroups();
+                } else {
+                    console.error('Failed to respond to invitation');
+                }
+            } catch (error) {
+                console.error('Error responding to invitation:', error);
+            }
+        }
+
+        // Show/hide tabs
+        function showTab(tabName) {
+            // Hide all content
+            document.getElementById('usersList').classList.add('hidden');
+            document.getElementById('groupsList').classList.add('hidden');
+            document.getElementById('invitationsList').classList.add('hidden');
+
+            // Remove active class from all tabs
+            document.getElementById('usersTab').classList.remove('text-blue-600', 'border-blue-600');
+            document.getElementById('usersTab').classList.add('text-gray-500', 'border-transparent');
+            document.getElementById('groupsTab').classList.remove('text-blue-600', 'border-blue-600');
+            document.getElementById('groupsTab').classList.add('text-gray-500', 'border-transparent');
+            document.getElementById('invitationsTab').classList.remove('text-blue-600', 'border-blue-600');
+            document.getElementById('invitationsTab').classList.add('text-gray-500', 'border-transparent');
+
+            // Show selected content and update tab
+            if (tabName === 'users') {
+                document.getElementById('usersList').classList.remove('hidden');
+                document.getElementById('usersTab').classList.remove('text-gray-500', 'border-transparent');
+                document.getElementById('usersTab').classList.add('text-blue-600', 'border-blue-600');
+            } else if (tabName === 'groups') {
+                document.getElementById('groupsList').classList.remove('hidden');
+                document.getElementById('groupsTab').classList.remove('text-gray-500', 'border-transparent');
+                document.getElementById('groupsTab').classList.add('text-blue-600', 'border-blue-600');
+            } else if (tabName === 'invitations') {
+                document.getElementById('invitationsList').classList.remove('hidden');
+                document.getElementById('invitationsTab').classList.remove('text-gray-500', 'border-transparent');
+                document.getElementById('invitationsTab').classList.add('text-blue-600', 'border-blue-600');
+            }
+        }
+
+        // Modal functions
+        function showCreateGroupModal() {
+            document.getElementById('createGroupModal').classList.remove('hidden');
+        }
+
+        function hideCreateGroupModal() {
+            document.getElementById('createGroupModal').classList.add('hidden');
+            document.getElementById('groupName').value = '';
+            document.getElementById('groupDescription').value = '';
+            document.getElementById('groupPrivate').checked = false;
+        }
+
+        // Logout
+        function logout() {
+            window.location.href = '/auth/logout';
+        }
+
+        // Handle Enter key in message input
+        document.getElementById('messageText').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', initChat);
+    </script>
+</body>
+</html>
