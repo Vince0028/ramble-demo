@@ -562,7 +562,7 @@ if __name__ == '__main__':
     # Get port from environment variable (for Render) or default to 5000
     port = int(os.environ.get('PORT', 5000))
     # Run with: py app.py
-    app.run(host='0.0.0.0', port=port, debug=False)
+    app.run(host='0.0.0.0', port=port, debug=True)
 else:
     # This is for production deployment with Gunicorn
     pass
