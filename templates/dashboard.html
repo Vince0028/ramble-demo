@@ -247,7 +247,18 @@
       if (userData) {
         setUser(JSON.parse(userData));
       } else {
-        window.location.assign('/');
+        // Fallback to server session
+        fetch('/api/user')
+          .then(r => r.json())
+          .then(data => {
+            if (data && !data.error) {
+              try { localStorage.setItem('ramble_user', JSON.stringify(data)); } catch {}
+              setUser(data);
+            } else {
+              window.location.assign('/');
+            }
+          })
+          .catch(() => window.location.assign('/'));
       }
       
       // Always show quiz on dashboard load for testing

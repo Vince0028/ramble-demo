@@ -110,6 +110,11 @@
 
         if (response.ok) {
           // Success - redirect to dashboard
+          try {
+            if (result && result.user) {
+              localStorage.setItem('ramble_user', JSON.stringify(result.user));
+            }
+          } catch {}
           window.location.assign('/dashboard');
         } else {
           // Handle error
@@ -147,6 +152,11 @@
 
         if (response.ok) {
           // Success - redirect to dashboard
+        try {
+          if (result && result.user) {
+            localStorage.setItem('ramble_user', JSON.stringify(result.user));
+          }
+        } catch {}
         window.location.assign('/dashboard');
         } else {
           // Handle error
