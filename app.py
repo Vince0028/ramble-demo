@@ -4,6 +4,7 @@ import os
 from dotenv import load_dotenv
 import json
 import secrets
+from database import get_db_manager
 
 # Load environment variables
 load_dotenv()
@@ -145,15 +146,44 @@ def linkedin_callback():
         if email_data.get('elements') and len(email_data['elements']) > 0:
             email = email_data['elements'][0]['handle~']['emailAddress']
         
-        # Store user data in session
-        user_data = {
-            'name': full_name,
-            'email': email,
-            'linkedin_id': profile_data.get('id'),
-            'points': 2690,  # Default points for new users
-            'rank': 4,       # Default rank for new users
-            'login_method': 'linkedin'
-        }
+        # Check if user exists in database
+        db_manager = get_db_manager()
+        existing_user = db_manager.get_user_by_linkedin_id(profile_data.get('id'))
+        
+        if existing_user:
+            # Update existing user
+            user_data = {
+                'name': full_name,
+                'email': email,
+                'linkedin_id': profile_data.get('id'),
+                'points': existing_user.get('points', 2690),
+                'rank': existing_user.get('rank', 4),
+                'login_method': 'linkedin',
+                'db_user': existing_user
+            }
+        else:
+            # Create new user in database
+            new_user_data = {
+                'email': email,
+                'firstName': first_name,
+                'surname': last_name,
+                'points': 2690,
+                'rank': 4,
+                'login_method': 'linkedin',
+                'linkedin_id': profile_data.get('id')
+            }
+            
+            db_user = db_manager.create_user(new_user_data)
+            
+            user_data = {
+                'name': full_name,
+                'email': email,
+                'linkedin_id': profile_data.get('id'),
+                'points': 2690,
+                'rank': 4,
+                'login_method': 'linkedin',
+                'db_user': db_user
+            }
         
         session['user'] = user_data
         
@@ -173,6 +203,98 @@ def logout():
     session.pop('oauth_state', None)
     return redirect('/')
 
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    """Handle user login"""
+    try:
+        data = request.get_json()
+        
+        # Validate required fields
+        if not data.get('email') or not data.get('password'):
+            return jsonify({'error': 'Email and password are required'}), 400
+        
+        # Authenticate user
+        db_manager = get_db_manager()
+        user = db_manager.authenticate_user(data['email'], data['password'])
+        
+        if user:
+            # Store in session
+            session['user'] = {
+                'name': f"{user.get('first_name', '')} {user.get('surname', '')}".strip(),
+                'email': user.get('email'),
+                'points': user.get('points', 2690),
+                'rank': user.get('rank', 4),
+                'login_method': 'email',
+                'db_user': user
+            }
+            
+            return jsonify({
+                'success': True,
+                'message': 'Login successful',
+                'user': session['user']
+            })
+        else:
+            return jsonify({'error': 'Invalid email or password'}), 401
+            
+    except Exception as e:
+        return jsonify({'error': f'Login error: {str(e)}'}), 500
+
+@app.route('/api/signup', methods=['POST'])
+def signup():
+    """Handle user signup"""
+    try:
+        data = request.get_json()
+        
+        # Validate required fields
+        required_fields = ['firstName', 'surname', 'email', 'password', 'birthday', 'gender']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'error': f'{field} is required'}), 400
+        
+        # Check if user already exists
+        db_manager = get_db_manager()
+        existing_user = db_manager.get_user_by_email(data['email'])
+        if existing_user:
+            return jsonify({'error': 'User with this email already exists'}), 409
+        
+        # Create new user
+        user_data = {
+            'email': data['email'],
+            'firstName': data['firstName'],
+            'middleName': data.get('middleName', ''),
+            'surname': data['surname'],
+            'birthday': data['birthday'],
+            'gender': data['gender'],
+            'password': data['password'],
+            'points': 2690,
+            'rank': 4,
+            'login_method': 'email'
+        }
+        
+        db_user = db_manager.create_user(user_data)
+        
+        if db_user:
+            # Store in session
+            session['user'] = {
+                'name': f"{data['firstName']} {data['surname']}",
+                'email': data['email'],
+                'points': 2690,
+                'rank': 4,
+                'login_method': 'email',
+                'db_user': db_user
+            }
+            
+            return jsonify({
+                'success': True,
+                'message': 'User created successfully',
+                'user': session['user']
+            })
+        else:
+            return jsonify({'error': 'Failed to create user'}), 500
+            
+    except Exception as e:
+        return jsonify({'error': f'Signup error: {str(e)}'}), 500
 
 @app.route('/api/user')
 def get_user():
