@@ -2,7 +2,7 @@ services:
   - type: web
     name: ramble-demo
     env: python
-    buildCommand: pip install -r requirement.txt
+    buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app
     # Environment variables should be set in Render dashboard
     # Go to your service > Environment tab to add:
