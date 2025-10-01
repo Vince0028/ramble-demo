@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import json
 import secrets
 from database import get_db_manager
+from urllib.parse import urlencode
 
 # Load environment variables
 load_dotenv()
@@ -83,17 +84,15 @@ def linkedin_login():
     state = secrets.token_urlsafe(32)
     session['oauth_state'] = state
     
-    # LinkedIn OAuth URL
-    linkedin_auth_url = (
-        f"https://www.linkedin.com/oauth/v2/authorization?"
-        f"response_type=code&"
-        f"client_id={LINKEDIN_CLIENT_ID}&"
-        f"redirect_uri={LINKEDIN_REDIRECT_URI}&"
-        f"state={state}&"
-        f"scope=r_liteprofile%20r_emailaddress"
-    )
-    
-    return redirect(linkedin_auth_url)
+    # Build LinkedIn OAuth URL safely
+    params = {
+        'response_type': 'code',
+        'client_id': LINKEDIN_CLIENT_ID,
+        'redirect_uri': LINKEDIN_REDIRECT_URI,
+        'state': state,
+        'scope': 'r_liteprofile r_emailaddress',
+    }
+    return redirect(f"https://www.linkedin.com/oauth/v2/authorization?{urlencode(params)}")
 
 
 @app.route('/auth/linkedin/callback')
