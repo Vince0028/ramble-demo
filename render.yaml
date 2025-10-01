@@ -3,7 +3,7 @@ services:
     name: ramble-demo
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
     # Environment variables should be set in Render dashboard
     # Go to your service > Environment tab to add:
     # SECRET_KEY, SUPABASE_URL, SUPABASE_KEY, LINKEDIN_CLIENT_ID, LINKEDIN_CLIENT_SECRET, LINKEDIN_REDIRECT_URI
