@@ -563,3 +563,6 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     # Run with: py app.py
     app.run(host='0.0.0.0', port=port, debug=False)
+else:
+    # This is for production deployment with Gunicorn
+    pass

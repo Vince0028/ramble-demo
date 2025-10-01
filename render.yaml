@@ -3,7 +3,7 @@ services:
     name: ramble-demo
     env: python
     buildCommand: pip install -r requirement.txt
-    startCommand: python app.py
+    startCommand: gunicorn app:app
     envVars:
       - key: SECRET_KEY
         value: ramble-demo-secret-key-2024-production
@@ -13,3 +13,7 @@ services:
         value: WPL_AP1.DLvWnuIO53i8K8Gk.r22wZQ==
       - key: LINKEDIN_REDIRECT_URI
         value: https://ramble-demo-1.onrender.com/auth/linkedin/callback
+      - key: SUPABASE_URL
+        value: your-supabase-url-here
+      - key: SUPABASE_KEY
+        value: your-supabase-anon-key-here
