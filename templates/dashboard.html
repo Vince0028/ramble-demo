@@ -381,12 +381,16 @@
               <i data-lucide="users" className="w-5 h-5"></i>
               <span className="text-xs">GROUPS</span>
             </button>
+            <button className="flex flex-col items-center gap-1 text-black p-2 rounded hover:bg-black/10" onClick={() => window.location.assign('/chat')}>
+              <i data-lucide="message-circle" className="w-5 h-5"></i>
+              <span className="text-xs">CHAT</span>
+            </button>
             <button className="flex flex-col items-center gap-1 text-black p-2 rounded hover:bg-black/10" onClick={() => window.location.assign('/leaderboard')}>
               <i data-lucide="trophy" className="w-5 h-5"></i>
               <span className="text-xs">BOARD</span>
             </button>
             <button className="flex flex-col items-center gap-1 text-black p-2 rounded hover:bg-black/10" onClick={() => window.location.assign('/profile')}>
-              <i data-lucide="message-circle" className="w-5 h-5"></i>
+              <i data-lucide="user" className="w-5 h-5"></i>
               <span className="text-xs">PROFILE</span>
             </button>
           </div>

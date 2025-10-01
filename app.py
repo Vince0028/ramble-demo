@@ -63,6 +63,11 @@ def quiz():
     return render_template('quiz.html')
 
 
+@app.route('/chat')
+def chat():
+    return render_template('chat.html')
+
+
 # LinkedIn OAuth routes
 @app.route('/auth/linkedin')
 def linkedin_login():
@@ -125,7 +130,7 @@ def linkedin_callback():
         access_token = token_info['access_token']
         
         # Get user profile information
-        profile_url = 'https://api.linkedin.com/v2/people/~'
+        profile_url = 'https://api.linkedin.com/v2/people/~:(id,firstName,lastName,profilePicture(displayImage~:playableStreams))'
         headers = {'Authorization': f'Bearer {access_token}'}
         profile_response = requests.get(profile_url, headers=headers)
         profile_response.raise_for_status()
@@ -146,6 +151,13 @@ def linkedin_callback():
         if email_data.get('elements') and len(email_data['elements']) > 0:
             email = email_data['elements'][0]['handle~']['emailAddress']
         
+        # Get profile picture URL
+        profile_picture_url = ''
+        if 'profilePicture' in profile_data and 'displayImage~' in profile_data['profilePicture']:
+            elements = profile_data['profilePicture']['displayImage~'].get('elements', [])
+            if elements and len(elements) > 0:
+                profile_picture_url = elements[0].get('identifiers', [{}])[0].get('identifier', '')
+        
         # Check if user exists in database
         db_manager = get_db_manager()
         existing_user = db_manager.get_user_by_linkedin_id(profile_data.get('id'))
@@ -156,6 +168,7 @@ def linkedin_callback():
                 'name': full_name,
                 'email': email,
                 'linkedin_id': profile_data.get('id'),
+                'profile_picture_url': profile_picture_url,
                 'points': existing_user.get('points', 2690),
                 'rank': existing_user.get('rank', 4),
                 'login_method': 'linkedin',
@@ -167,6 +180,7 @@ def linkedin_callback():
                 'email': email,
                 'firstName': first_name,
                 'surname': last_name,
+                'profile_picture_url': profile_picture_url,
                 'points': 2690,
                 'rank': 4,
                 'login_method': 'linkedin',
@@ -179,6 +193,7 @@ def linkedin_callback():
                 'name': full_name,
                 'email': email,
                 'linkedin_id': profile_data.get('id'),
+                'profile_picture_url': profile_picture_url,
                 'points': 2690,
                 'rank': 4,
                 'login_method': 'linkedin',
@@ -304,6 +319,243 @@ def get_user():
         return jsonify(user)
     else:
         return jsonify({'error': 'Not authenticated'}), 401
+
+# Chat API endpoints
+@app.route('/api/chat/users')
+def get_chat_users():
+    """Get all users for chat/discovery"""
+    user = session.get('user')
+    if not user:
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    try:
+        db_manager = get_db_manager()
+        users = db_manager.get_all_users(exclude_user_id=user['db_user']['id'])
+        return jsonify(users)
+    except Exception as e:
+        return jsonify({'error': f'Failed to get users: {str(e)}'}), 500
+
+@app.route('/api/chat/groups', methods=['GET'])
+def get_user_groups():
+    """Get user's groups"""
+    user = session.get('user')
+    if not user:
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    try:
+        db_manager = get_db_manager()
+        groups = db_manager.get_user_groups(user['db_user']['id'])
+        return jsonify(groups)
+    except Exception as e:
+        return jsonify({'error': f'Failed to get groups: {str(e)}'}), 500
+
+@app.route('/api/chat/groups', methods=['POST'])
+def create_group():
+    """Create a new group"""
+    user = session.get('user')
+    if not user:
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    try:
+        data = request.get_json()
+        
+        if not data.get('name'):
+            return jsonify({'error': 'Group name is required'}), 400
+        
+        group_data = {
+            'name': data['name'],
+            'description': data.get('description', ''),
+            'created_by': user['db_user']['id'],
+            'is_private': data.get('is_private', False)
+        }
+        
+        db_manager = get_db_manager()
+        group = db_manager.create_group(group_data)
+        
+        if group:
+            # Add creator as admin
+            db_manager.add_group_member(group['id'], user['db_user']['id'], 'admin')
+            return jsonify(group)
+        else:
+            return jsonify({'error': 'Failed to create group'}), 500
+            
+    except Exception as e:
+        return jsonify({'error': f'Failed to create group: {str(e)}'}), 500
+
+@app.route('/api/chat/groups/<group_id>/members')
+def get_group_members(group_id):
+    """Get group members"""
+    user = session.get('user')
+    if not user:
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    try:
+        db_manager = get_db_manager()
+        members = db_manager.get_group_members(group_id)
+        return jsonify(members)
+    except Exception as e:
+        return jsonify({'error': f'Failed to get group members: {str(e)}'}), 500
+
+@app.route('/api/chat/groups/<group_id>/invite', methods=['POST'])
+def invite_to_group(group_id):
+    """Invite user to group"""
+    user = session.get('user')
+    if not user:
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    try:
+        data = request.get_json()
+        invited_user_id = data.get('user_id')
+        
+        if not invited_user_id:
+            return jsonify({'error': 'User ID is required'}), 400
+        
+        invitation_data = {
+            'group_id': group_id,
+            'invited_by': user['db_user']['id'],
+            'invited_user_id': invited_user_id
+        }
+        
+        db_manager = get_db_manager()
+        invitation = db_manager.create_group_invitation(invitation_data)
+        
+        if invitation:
+            return jsonify(invitation)
+        else:
+            return jsonify({'error': 'Failed to create invitation'}), 500
+            
+    except Exception as e:
+        return jsonify({'error': f'Failed to invite user: {str(e)}'}), 500
+
+@app.route('/api/chat/invitations')
+def get_user_invitations():
+    """Get user's pending invitations"""
+    user = session.get('user')
+    if not user:
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    try:
+        db_manager = get_db_manager()
+        invitations = db_manager.get_user_invitations(user['db_user']['id'])
+        return jsonify(invitations)
+    except Exception as e:
+        return jsonify({'error': f'Failed to get invitations: {str(e)}'}), 500
+
+@app.route('/api/chat/invitations/<invitation_id>/respond', methods=['POST'])
+def respond_to_invitation(invitation_id):
+    """Respond to group invitation"""
+    user = session.get('user')
+    if not user:
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    try:
+        data = request.get_json()
+        status = data.get('status')  # 'accepted' or 'declined'
+        
+        if status not in ['accepted', 'declined']:
+            return jsonify({'error': 'Status must be accepted or declined'}), 400
+        
+        db_manager = get_db_manager()
+        success = db_manager.respond_to_invitation(invitation_id, status)
+        
+        if success and status == 'accepted':
+            # Add user to group
+            # First get the invitation to find group_id
+            invitations = db_manager.get_user_invitations(user['db_user']['id'])
+            invitation = next((inv for inv in invitations if inv['id'] == invitation_id), None)
+            
+            if invitation:
+                db_manager.add_group_member(invitation['group_id'], user['db_user']['id'])
+        
+        if success:
+            return jsonify({'success': True})
+        else:
+            return jsonify({'error': 'Failed to respond to invitation'}), 500
+            
+    except Exception as e:
+        return jsonify({'error': f'Failed to respond to invitation: {str(e)}'}), 500
+
+@app.route('/api/chat/messages', methods=['POST'])
+def send_message():
+    """Send a message"""
+    user = session.get('user')
+    if not user:
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    try:
+        data = request.get_json()
+        
+        if not data.get('content'):
+            return jsonify({'error': 'Message content is required'}), 400
+        
+        message_data = {
+            'sender_id': user['db_user']['id'],
+            'content': data['content'],
+            'message_type': data.get('message_type', 'text')
+        }
+        
+        # Add group_id or recipient_id based on message type
+        if data.get('group_id'):
+            message_data['group_id'] = data['group_id']
+        elif data.get('recipient_id'):
+            message_data['recipient_id'] = data['recipient_id']
+        else:
+            return jsonify({'error': 'Either group_id or recipient_id is required'}), 400
+        
+        db_manager = get_db_manager()
+        message = db_manager.send_message(message_data)
+        
+        if message:
+            return jsonify(message)
+        else:
+            return jsonify({'error': 'Failed to send message'}), 500
+            
+    except Exception as e:
+        return jsonify({'error': f'Failed to send message: {str(e)}'}), 500
+
+@app.route('/api/chat/messages')
+def get_messages():
+    """Get messages for a conversation"""
+    user = session.get('user')
+    if not user:
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    try:
+        group_id = request.args.get('group_id')
+        recipient_id = request.args.get('recipient_id')
+        limit = int(request.args.get('limit', 50))
+        
+        if not group_id and not recipient_id:
+            return jsonify({'error': 'Either group_id or recipient_id is required'}), 400
+        
+        db_manager = get_db_manager()
+        messages = db_manager.get_messages(group_id=group_id, recipient_id=recipient_id, limit=limit)
+        return jsonify(messages)
+        
+    except Exception as e:
+        return jsonify({'error': f'Failed to get messages: {str(e)}'}), 500
+
+@app.route('/api/chat/online-status', methods=['POST'])
+def update_online_status():
+    """Update user's online status"""
+    user = session.get('user')
+    if not user:
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    try:
+        data = request.get_json()
+        is_online = data.get('is_online', True)
+        
+        db_manager = get_db_manager()
+        success = db_manager.update_user_online_status(user['db_user']['id'], is_online)
+        
+        if success:
+            return jsonify({'success': True})
+        else:
+            return jsonify({'error': 'Failed to update online status'}), 500
+            
+    except Exception as e:
+        return jsonify({'error': f'Failed to update online status: {str(e)}'}), 500
 
 
 if __name__ == '__main__':
